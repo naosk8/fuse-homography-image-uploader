@@ -1,0 +1,100 @@
+<App>
+
+	<!-- small UI parts -->
+	<Panel ux:Class="ButtonEntry" Padding="10,15" >
+		<string ux:Property="Text" />
+		<Rectangle Color="#FDFDFD" Layer="Background" CornerRadius="8" />
+		<Text Value="{ReadProperty Text}" Color="#333" FontSize="18" Alignment="Center" />
+	</Panel>
+
+	<Rectangle ux:Class="Divider" Height="1" Color="#ddd"/>
+
+	<Panel ux:Class="my.Button" Margin="10" Padding="10" FontSize="16">
+		<string ux:Property="Text" />
+		<float ux:Property="FontSize" />
+		<Rectangle Layer="Background" Color="#125F63" CornerRadius="4">
+			<DropShadow Angle="90" Distance="1" Spread="0.2" Size="2" Color="#00000060" />
+		</Rectangle>
+		<Text Value="{ReadProperty Text}" FontSize="{ReadProperty FontSize}" TextAlignment="Center" Color="White" />
+		<WhilePressed>
+			<Scale Factor=".95" Duration=".08" Easing="QuadraticOut" />
+		</WhilePressed>
+	</Panel>
+	<!-- small UI parts-->
+
+	<Page>
+	    <JavaScript File="MainView.js" />
+	    <Panel>
+	        <DockPanel ux:Name="CropPanel" Visibility="Collapsed" Height="100%" Width="100%">
+	            <Rectangle Color="Black" Width="100%" Height="100%" Layer="Background" />
+	            <Panel Dock="Top" Height="90%">
+	                <WhileTrue Value="{showCropPanel}">
+	                    <Change CropPanel.Visibility="Visible" />
+	                </WhileTrue>
+	                <WhileTrue Value="{isImageUploaded}">
+	                    <Image File="{uploadedImage.path}" StretchMode="Uniform" Width="100%" Height="80%" Placed="{imagePlaced}" />
+	                </WhileTrue>
+	                <my.CropArea CornerList="{cornerList}" />
+	            </Panel>
+	            <Panel Dock="Top" Height="10%">
+	                <my.Button Text="<" Clicked="{onCloseCropPanelClicked}"  Layer="Overlay" Width="40" Alignment="Left" />
+	                <my.Button Text="Upload" Clicked="{onUploadImageClicked}" Alignment="Center" />
+	            </Panel>
+	        </DockPanel>
+
+	        <StackPanel ux:Name="ImageUploader" Margin="0,50">
+	            <Panel ux:Name="PictureAddPanel" Alignment="Center" Width="100%" Height="200" Visibility="Visible">
+	                <Clicked>
+	                    <Toggle Target="showPhotoUploadOptions"/>
+	                </Clicked>
+	                <Rectangle Layer="Background" CornerRadius="0,0,3,3" Color="#eee" />
+	                <StackPanel Orientation="Horizontal" Alignment="Center" ItemSpacing="7" Margin="0,13">
+	                    <Image StretchMode="Uniform" Width="17" Height="17" Opacity="0.3">
+	                        <MultiDensityImageSource>
+	                            <FileImageSource File="./Assets/fa-camera@1x.png" Density="1" />
+	                            <FileImageSource File="./Assets/fa-camera@2x.png" Density="2" />
+	                            <FileImageSource File="./Assets/fa-camera@4x.png" Density="4" />
+	                        </MultiDensityImageSource>
+	                    </Image>
+	                    <Text FontSize="20" TextColor="0,0,0,0.3" Margin="0,2,0,0">Add a picture</Text>
+	                </StackPanel>
+	                <WhileTrue Value="{isImageUploaded}">
+	                    <Change PictureAddPanel.Opacity="0" Duration="0.5" />
+	                    <Change PictureAddPanel.Visibility="Collapsed" Duration="0.5" />
+	                </WhileTrue>
+	            </Panel>
+	        </StackPanel>
+	    </Panel>
+
+	    <Panel ux:Name="PopupPanel" ClipToBounds="true" Layer="Overlay" Visibility="Collapsed">
+	        <WhileTrue ux:Name="showPhotoUploadOptions">
+	            <Change PopupPanel.Visibility="Visible" Duration="0.5"/>
+	            <Change DropShadow.Opacity="0.7" Duration="0.5"/>
+	            <Change PhotoMenuPanel.Offset="0,-20" Duration="0.2" Delay="0.22" DelayBack="0" Easing="CubicOut"/>
+	        </WhileTrue>
+
+	        <Rectangle ux:Name="DropShadow" Color="#222" Opacity="0" Layer="Background">
+	            <Clicked>
+	                <Toggle Target="showPhotoUploadOptions"/>
+	            </Clicked>
+	        </Rectangle>
+	        <DockPanel>
+	            <StackPanel ux:Name="PhotoMenuPanel" Dock="Bottom" Width="90%" Offset="0,200">
+	                <Rectangle Color="#FDFDFD" CornerRadius="8" Layer="Background" />
+	                <ButtonEntry Text="Take a photo" Clicked="{onTakePictureClicked}">
+	                    <Clicked><Toggle Target="showPhotoUploadOptions"/></Clicked>
+	                </ButtonEntry>
+	                <Divider />
+	                <ButtonEntry Text="Select from library" Clicked="{onSelectPictureClicked}">
+	                    <Clicked><Toggle Target="showPhotoUploadOptions"/></Clicked>
+	                </ButtonEntry>
+	                <Divider />
+	                <ButtonEntry Text="Cancel">
+	                    <Clicked><Toggle Target="showPhotoUploadOptions"/></Clicked>
+	                </ButtonEntry>
+	            </StackPanel>
+	        </DockPanel>
+	    </Panel>
+	</Page>
+</App>
+

@@ -1,0 +1,116 @@
+<Panel ux:Class="my.CropArea" Layer="Overlay" Width="100%" Height="100%">
+    <object ux:Property="CornerList" />
+    <JavaScript>
+        var Observable = require("FuseJS/Observable");
+        var cornerList = this.CornerList.innerTwoWay();
+        var tmpCornerList = Observable();
+        var strokePairList = tmpCornerList.map(function(c) {
+            var pairIndex = (c.id + 1 <= 3) ? c.id + 1 : 0;
+            var strokePair = {start: c, end: tmpCornerList.getAt(pairIndex)};
+            return strokePair;
+        });
+        // マーカー表示用の設定値
+        var circleSize = 80;
+        var radius = 40;
+        var offset = - circleSize / 2;
+        var insideCircleSize = 20;
+        // ドラッグ対象のマーカーのID
+        var selected_id = null;
+        var lastX = null, lastY = null, localX = null, localY = null,
+            initialX = null, initialY = null;
+        function onMoved(args) {
+            if (selected_id == null) {
+                return;
+            }
+            if (localX == null && localY == null) {
+                // localX,localYは、イベントを発行したエレメント内における発火点のX,Y座標のこと
+                localX = -radius + args.localX;
+                localY = -radius + args.localY;
+                initialX = args.x;
+                initialY = args.y;
+            }
+            lastX = Math.floor(initialX + (args.x - initialX) - localX);
+            lastY = Math.floor(initialY + (args.y - initialY) - localY);
+            updatePosition(selected_id, lastX, lastY);
+        }
+
+        function onDragCorner(args) {
+            selected_id = args.data.id;
+        }
+
+        function onReleaseCorner(args) {
+            // 指を話した時のみ、このux:Classの呼び出し元へと変数の更新を伝播
+            updatePosition(selected_id, lastX, lastY, true);
+            selected_id = null;
+            lastX = null;
+            lastY = null;
+            localX = null;
+            localY = null;
+            initialX = null;
+            initialY = null;
+        }
+
+        function updatePosition(id, x, y, updateParent=false) {
+            if (id == null || x == null || y == null) {
+                return;
+            }
+            tmpCornerList.getAt(id).x.value = x;
+            tmpCornerList.getAt(id).y.value = y;
+            if (updateParent) {
+                cornerList.replaceAll(tmpCornerList.toArray());
+            }
+        }
+
+        var initialCornerList = Observable();
+        cornerList.onValueChanged(module, function(v) {
+            if (!initialCornerList.value && cornerList.toArray().length > 0) {
+                initialCornerList.replaceAll(cornerList.toArray());
+                tmpCornerList.replaceAll(cornerList.toArray());
+            }
+        });
+
+        module.exports = {
+            circleSize: circleSize,
+            offset: offset,
+            insideCircleSize: insideCircleSize,
+            initialCornerList: initialCornerList,
+            strokePairList: strokePairList,
+            onDragCorner: onDragCorner,
+            onReleaseCorner: onReleaseCorner,
+            onMoved: onMoved,
+        }
+    </JavaScript>
+
+    <!-- 頂点を指定するためのマーカー表示の雛形 -->
+    <Panel ux:InnerClass="CornerPoint" ux:Name="CornerPointElm" Layer="Overlay" X="{x}" Y="{y}">
+        <Circle Color="Blue" Width="{circleSize}" Height="{circleSize}" Offset="{offset}, {offset}" HitTestMode="LocalBounds" Opacity="0.3">
+            <Pressed>
+                <Callback Handler="{onDragCorner}" />
+            </Pressed>
+        </Circle>
+        <Circle Color="Blue" Width="{insideCircleSize}" Height="{insideCircleSize}" Offset="{offset}, {offset}" />
+    </Panel>
+
+    <!-- 実際のマーカー表示 -->
+    <ClientPanel Moved="{onMoved}" HitTestMode="LocalBoundsAndChildren">
+        <Released>
+            <Callback Handler="{onReleaseCorner}" />
+        </Released>
+        <Each Items="{initialCornerList}">
+            <Text Value="({x}, {y})" Color="Gray" TextWrapping="Wrap" X="{x}" Y="{y}" Offset="-30,10"/>
+                <!-- InnerClass:CornerPointを呼び出し -->
+                <CornerPoint />
+        </Each>
+    </ClientPanel>
+
+    <!-- 各マーカーを結ぶ直線の表示 -->
+    <ClientPanel>
+        <!-- https://www.fusetools.com/community/forums/bug_reports/curve_dont_draw_line -->
+        <Each Items="{strokePairList}">
+            <Curve StrokeWidth="3" Width="1" Height="1" StrokeColor="Blue" Style="Straight" Layer="Overlay" X="0" Y="0" Offset="0, 0" Opacity="0.5">
+                <CurvePoint At="{start.x}, {start.y}" />
+                <CurvePoint At="{end.x}, {end.y}" />
+            </Curve>
+        </Each>
+    </ClientPanel>
+</Panel>
